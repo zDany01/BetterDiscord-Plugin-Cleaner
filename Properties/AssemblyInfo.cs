@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 // set di attributi. Modificare i valori di questi attributi per modificare le informazioni
 // associate a un assembly.
 [assembly: AssemblyTitle("BetterDiscordPluginCleaner")]
-[assembly: AssemblyDescription("A simple tool to analyze current plugin files in betterdiscord plugin folder, useful to clean or diagnose some problems with plugins")]
+[assembly: AssemblyDescription("A simple tool to analyze current plugin files in BetterDiscord plugin folder, useful to clean or diagnose some problems with plugins")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
 [assembly: AssemblyProduct("BetterDiscordPluginCleaner")]
@@ -32,5 +32,5 @@ using System.Runtime.InteropServices;
 // È possibile specificare tutti i valori oppure impostare valori predefiniti per i numeri relativi alla revisione e alla build
 // usando l'asterisco '*' come illustrato di seguito:
 // [assembly: AssemblyVersion("1.0.*")]
-[assembly: AssemblyVersion("0.0.0.133")]
-[assembly: AssemblyFileVersion("0.0.0.133")]
+[assembly: AssemblyVersion("0.0.0.150")]
+[assembly: AssemblyFileVersion("0.0.0.150")]

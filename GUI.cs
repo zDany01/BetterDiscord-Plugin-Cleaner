@@ -17,12 +17,12 @@ namespace BetterDiscordPluginCleaner
 {
     public partial class GUI : Form
     {
-        const string APP_NAME = "BetterDiscord Plugin Checker";
-        private RegistryKey applicationSettingsRegistryKey = Registry.CurrentUser.OpenSubKey("Software").OpenSubKey("BDPluginCleaner", true);
+        private const string APP_NAME = "BetterDiscord Plugin Checker";
         private readonly string bdDefaultPluginPath = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData) + "\\BetterDiscord\\plugins";
-        private string _bdplugindirectory = null;
+        private RegistryKey applicationRegistryKey = Registry.CurrentUser.OpenSubKey("Software").OpenSubKey("BDPluginCleaner", true);
 
-        public string BDPluginDirectory
+        private string _bdplugindirectory = null;
+        private string BDPluginDirectory
         {
             get => Directory.Exists(_bdplugindirectory) ? _bdplugindirectory : null;
             set
@@ -53,6 +53,7 @@ namespace BetterDiscordPluginCleaner
                 }
             }
         }
+
         public GUI()
         {
             InitializeComponent();
@@ -63,41 +64,7 @@ namespace BetterDiscordPluginCleaner
             restoreDefaultBtn.Click += RestoreDefaultBtn_Click;
             choosePathBtn.Click += ChoosePathBtn_Click;
             saveSettingsBtn.Click += SaveSettingsBtn_Click;
-
         }
-
-        private void SaveSettingsBtn_Click(object sender, EventArgs e)
-        {
-#if DEBUG
-            string oldValue = (string)applicationSettingsRegistryKey.GetValue("PluginPath") ?? "NULL";
-#endif
-            applicationSettingsRegistryKey.SetValue("PluginPath", BDPluginDirectory);
-#if DEBUG
-            Debug.WriteLine($"[DEBUG] Changed registry path from \"{oldValue}\" to \"{BDPluginDirectory}\"");
-#endif
-            MessageBox.Show("Settings Saved",APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-
-        private void ChoosePathBtn_Click(object sender, EventArgs e)
-        {
-            if (folderBrowserDialog.ShowDialog() == DialogResult.OK) BDPluginDirectory = folderBrowserDialog.SelectedPath;
-        }
-
-        private void RestoreDefaultBtn_Click(object sender, EventArgs e)
-        {
-            if (Directory.Exists(bdDefaultPluginPath))
-            {
-                BDPluginDirectory = bdDefaultPluginPath;
-                pluginPathTbx.Text = bdDefaultPluginPath;
-                MessageBox.Show("Restored default directory.", APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
-            }
-        }
-
-        private void CancelSettingsBtn_Click(object sender, EventArgs e)
-        {
-            settingsPanel.Visible = false;
-        }
-
         private void SetEnableStatus(bool enableStatus)
         {
             fileListBox.Enabled = enableStatus;
@@ -107,21 +74,20 @@ namespace BetterDiscordPluginCleaner
             resetAllBtn.Enabled = enableStatus;
             resetSelectedBtn.Enabled = enableStatus;
         }
-
         private void GUI_Load(object sender, EventArgs e)
         {
-            if (applicationSettingsRegistryKey is null)
+            if (applicationRegistryKey is null)
             {
-                applicationSettingsRegistryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE", true).CreateSubKey("BDPluginCleaner");
+                applicationRegistryKey = Registry.CurrentUser.OpenSubKey("SOFTWARE", true).CreateSubKey("BDPluginCleaner");
 #if DEBUG
                 Debug.WriteLine("[DEBUG] Created configuration folder in registry");
 #endif
             }
-            string registrySavedPath = (string)applicationSettingsRegistryKey.GetValue("PluginPath");
+            string registrySavedPath = (string)applicationRegistryKey.GetValue("PluginPath");
             if (!(registrySavedPath is null))
             {
                 if (Directory.Exists(registrySavedPath)) BDPluginDirectory = registrySavedPath;
-                else applicationSettingsRegistryKey.DeleteValue("PluginPath");
+                else applicationRegistryKey.DeleteValue("PluginPath");
             }
 
             if (BDPluginDirectory is null && Directory.Exists(bdDefaultPluginPath)) BDPluginDirectory = bdDefaultPluginPath;
@@ -129,7 +95,6 @@ namespace BetterDiscordPluginCleaner
             PrintDebugInfo();
 #endif
         }
-
         private void GUI_KeyDown(object sender, KeyEventArgs e)
         {
             if (e.KeyData == Keys.Escape) if (settingsPanel.Visible) settingsPanel.Hide(); else Close();
@@ -138,8 +103,34 @@ namespace BetterDiscordPluginCleaner
             else if (e.KeyData == Keys.F7) PrintFoundPlugin();
 #endif
         }
-
-
+        private void SaveSettingsBtn_Click(object sender, EventArgs e)
+        {
+#if DEBUG
+            string oldValue = (string)applicationRegistryKey.GetValue("PluginPath") ?? "NULL";
+#endif
+            applicationRegistryKey.SetValue("PluginPath", BDPluginDirectory);
+#if DEBUG
+            Debug.WriteLine($"[DEBUG] Changed registry path from \"{oldValue}\" to \"{BDPluginDirectory}\"");
+#endif
+            MessageBox.Show("Settings Saved",APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        private void RestoreDefaultBtn_Click(object sender, EventArgs e)
+        {
+            if (Directory.Exists(bdDefaultPluginPath))
+            {
+                BDPluginDirectory = bdDefaultPluginPath;
+                pluginPathTbx.Text = bdDefaultPluginPath;
+                MessageBox.Show("Restored default directory.", APP_NAME, MessageBoxButtons.OK, MessageBoxIcon.Information);
+            }
+        }
+        private void ChoosePathBtn_Click(object sender, EventArgs e)
+        {
+            if (folderBrowserDialog.ShowDialog() == DialogResult.OK) BDPluginDirectory = folderBrowserDialog.SelectedPath;
+        }       
+        private void CancelSettingsBtn_Click(object sender, EventArgs e)
+        {
+            settingsPanel.Visible = false;
+        }
 
 
 #if DEBUG
@@ -149,16 +140,26 @@ namespace BetterDiscordPluginCleaner
 [DEBUG INFO]
 App Version: {Application.ProductVersion}
 BetterDiscord Default Path: {(Directory.Exists(bdDefaultPluginPath) ? bdDefaultPluginPath : "❌")}
-Registry Saved Path: {applicationSettingsRegistryKey.GetValue("PluginPath") ?? "❌"}
+Registry Saved Path: {applicationRegistryKey.GetValue("PluginPath") ?? "❌"}
 Current Path: {BDPluginDirectory ?? "NOT SET (All disabled)"}
 Plugins number: {(BDPluginDirectory is null ? "❌" : Directory.GetFiles(BDPluginDirectory).Where<string>(fileName => fileName.EndsWith(".plugin.js")).Count().ToString())}
             ");
         }
-
         void PrintFoundPlugin()
         {
             Debug.Write("\n[DEBUG INFO]\nPlugin List:\n");
             foreach (string pluginFileName in Directory.GetFiles(BDPluginDirectory).Where<string>(fileName => fileName.EndsWith(".plugin.js"))) Debug.WriteLine(pluginFileName.Substring(pluginFileName.LastIndexOf('\\') + 1, pluginFileName.Length - 11 - pluginFileName.LastIndexOf('\\')));
+        }
+        void PrintDiscordPluginInfo(DiscordPlugin plugin)
+        {
+            Debug.WriteLine($@"
+[DEBUG] Plugin info
+Plugin Path: {plugin.PluginFile.FullName}
+Plugin Name: {plugin.PluginName}
+Config File: {(plugin.ConfigFile.Exists ? "✔":"❌")}
+CSS File: {(plugin.CSSFile.Exists ? "✔" : "❌")}
+Data File: {(plugin.DataFile.Exists ? "✔" : "❌")}
+            ");
         }
 #endif
     }
